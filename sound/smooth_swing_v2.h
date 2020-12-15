@@ -19,6 +19,7 @@ public:
       H = &SFX_hswing;
     }
     SetDelegate(base_font);
+
     if (L->files_found() != H->files_found()) {
       STDOUT.println("Warning, swingl and swingh should have the same number of files.");
     }

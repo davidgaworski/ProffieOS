@@ -77,7 +77,8 @@ public:
 
   void PlayOnce(Effect* effect, float start = 0.0) {
     sample_bytes_ = 0;
-    if (effect->Play(filename_)) {
+
+	if (effect->Play(filename_)) {
       start_ = start;
       effect_ = nullptr;
       run_ = true;

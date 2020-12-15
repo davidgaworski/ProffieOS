@@ -46,6 +46,7 @@ public:
 
 
   void PlayOnce(Effect* effect, float start = 0.0) {
+	
     MountSDCard();
     EnableAmplifier();
     STDOUT.print("unit = ");
@@ -57,6 +58,7 @@ public:
     pause_ = true;
     clear();
     ResetStopWhenZero();
+
     wav.PlayOnce(effect, start);
     SetStream(&wav);
     // Fill up the buffer, if possible.

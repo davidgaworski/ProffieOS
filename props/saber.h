@@ -114,6 +114,8 @@ public:
         SaberBase::DoBlast();
         return true;
 
+
+//Working on one button class TheOwlHootHoot
 #if NUM_BUTTONS == 1
       case EVENTID(BUTTON_NONE, EVENT_TWIST, MODE_ON | BUTTON_POWER):
 #endif
@@ -161,6 +163,7 @@ public:
         return true;
 
       case EVENTID(BUTTON_NONE, EVENT_CLASH, MODE_OFF | BUTTON_POWER):
+
 #if NUM_BUTTONS == 0
       case EVENTID(BUTTON_NONE, EVENT_SHAKE, MODE_OFF):
 #endif

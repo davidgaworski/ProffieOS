@@ -11,6 +11,7 @@ public:
   int preset_num;
   LSPtr<char> font;
   LSPtr<char> track;
+
 #define DEFINE_CURRENT_STYLE_STRING(N) LSPtr<char> current_style##N;
   ONCEPERBLADE(DEFINE_CURRENT_STYLE_STRING);
   LSPtr<char> name;
