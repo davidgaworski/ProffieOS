@@ -66,6 +66,7 @@
 class PlayWav : StateMachine, public AudioStream {
 public:
   void Play(const char* filename) {
+	  STDOUT.println(filename);
     if (!*filename) return;
     strcpy(filename_, filename);
     run_ = true;

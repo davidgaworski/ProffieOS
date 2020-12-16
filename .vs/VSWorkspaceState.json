@@ -1,6 +1,9 @@
 {
   "ExpandedNodes": [
-    ""
+    "",
+    "\\config",
+    "\\props",
+    "\\sound"
   ],
   "PreviewInSolutionExplorer": false
 }

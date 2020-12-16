@@ -15,17 +15,17 @@ const unsigned int maxLedsPerStrip = 64;
 
 #ifdef CONFIG_PRESETS
 Preset presets[] = {
-   { "SmthJedi", "voiceovers/darthvader/characters/lukeskywalker.wav",
+   { "SmthJedi", "lukeskywalker.wav",
     StylePtr<InOutSparkTip<EASYBLADE(BLUE, WHITE), 300, 800> >(), "blue"},
-	{ "SmthGrey", "voiceovers/darthvader/characters/darthvader.wav",
+	{ "TheReturn", "darthvader.wav",
 	StylePtr<InOutSparkTip<EASYBLADE(RED, WHITE), 300, 800> >(), "red"},
-   { "TeensySF", "voiceovers/darthvader/characters/macewindu.wav",
+   { "TeensySF", "macewindu.wav",
 	StylePtr<InOutSparkTip<EASYBLADE(MAGENTA, WHITE), 300, 800> >(), "purple"},
-   { "RgueCmdr", "voiceovers/darthvader/characters/owk.wav",
+   { "RgueCmdr", "owk.wav",
     StyleFirePtr<BLUE, CYAN>(), "blue fire"},
-   { "TthCrstl", "voiceovers/darthvader/characters/yoda.wav",
+   { "TthCrstl", "yoda.wav",
     StylePtr<InOutHelper<EASYBLADE(OnSpark<GREEN>, WHITE), 300, 800> >(), "green"},
-   { "TeensySF", "voiceovers/darthvader/characters/asokatano.wav",
+   { "TeensySF", "asokatano.wav",
     StyleNormalPtr<WHITE, RED, 300, 800, RED>(), "white"}
 };
 BladeConfig blades[] = {

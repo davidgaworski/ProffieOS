@@ -3,6 +3,14 @@
 
 #include "prop_base.h"
 
+#ifndef MOTION_TIMEOUT
+#define MOTION_TIMEOUT 60 * 15 * 1000
+#endif
+
+#ifdef ENABLE_SCROLL_MENU
+#define MOTION_TIMEOUT 60 * 15 * 1000
+#endif
+
 #define PROP_TYPE Saber
 
 // The Saber class implements the basic states and actions

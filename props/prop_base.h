@@ -897,12 +897,16 @@ public:
 
 #endif
 
-#ifndef DISABLE_COLOR_CHANGE
+#ifdef ENABLE_SCROLL_MENU
 
 #define TICK_ANGLE_2 (M_PI * 2 / 12)
 		switch (scroll_menu_enabled) {
 		case true: {
-			uint32_t t = millis();
+			SaberBase::RequestMotion();
+			//last_on_time_ = millis();
+			uint32_t t = millis();	
+			activated_ = millis();
+			//I2CUnlock();
 			switch (scroll_menu_mode) {
 			case FONT_CHANGE:
 			{
@@ -913,18 +917,43 @@ public:
 					current_tick_angle_ += TICK_ANGLE_2;
 					if (current_tick_angle_ > M_PI) current_tick_angle_ -= M_PI * 2;
 					STDOUT << "TICK+\n";
-					previous_preset();
+					if (!track_player_) {
+						previous_preset();
+					}
 				}
 				if (a < -TICK_ANGLE_2 * scrollfactor) {
 					current_tick_angle_ -= TICK_ANGLE_2;
 					if (current_tick_angle_ < M_PI) current_tick_angle_ += M_PI * 2;
 					STDOUT << "TICK-\n";
-					next_preset();
+					if (!track_player_) {
+						next_preset();
+					}
 				}
 				break;
 			}
 			case SOUND_CHANGE:
-				STDOUT << "SOUND_CHANGE";
+			{
+				float a = fusor.angle2() - current_tick_angle_;
+				if (a > M_PI) a -= M_PI * 2;
+				if (a < -M_PI) a += M_PI * 2;
+				if (a > TICK_ANGLE_2 * scrollfactor) {
+					current_tick_angle_ += TICK_ANGLE_2;
+					if (current_tick_angle_ > M_PI) current_tick_angle_ -= M_PI * 2;
+					STDOUT << "TICK+\n";
+					if (!track_player_) {
+						previous_menu_voice();
+					}
+				}
+				if (a < -TICK_ANGLE_2 * scrollfactor) {
+					current_tick_angle_ -= TICK_ANGLE_2;
+					if (current_tick_angle_ < M_PI) current_tick_angle_ += M_PI * 2;
+					STDOUT << "TICK-\n";
+					if (!track_player_) {
+						next_menu_voice();
+					}
+				}
+				break;
+			}
 			case MAIN_MENU:
 			{
 				float a = fusor.angle2() - current_tick_angle_;
@@ -934,13 +963,18 @@ public:
 					current_tick_angle_ += TICK_ANGLE_2;
 					if (current_tick_angle_ > M_PI) current_tick_angle_ -= M_PI * 2;
 					STDOUT << "TICK+\n";
-					previous_menu();
+					if (!track_player_) {
+						previous_menu();
+					}
+					//previous_menu();
 				}
 				if (a < -TICK_ANGLE_2 * scrollfactor) {
 					current_tick_angle_ -= TICK_ANGLE_2;
 					if (current_tick_angle_ < M_PI) current_tick_angle_ += M_PI * 2;
 					STDOUT << "TICK-\n";
-					next_menu();
+					if (!track_player_) {
+						next_menu();
+					}
 				}
 				break;
 			}
@@ -1025,9 +1059,10 @@ public:
 
 
 
-#ifndef DISABLE_SCROLL_MENU2
+#ifdef ENABLE_SCROLL_MENU
 	uint32_t last_beep_;
 	float current_tick_angle_ = 0.0;
+	char* current_voice_path = "yoda";
 
 	enum MENU_OPTIONS {
 		MAIN_MENU,
@@ -1042,11 +1077,10 @@ public:
 
 	enum VOICE_OPTIONS {
 		DARTHVADER,
-		YODA
+		YODA 
 	};
 
-	VOICE_OPTIONS select_voice = DARTHVADER;
-	VOICE_OPTIONS hover_voice = DARTHVADER;
+	VOICE_OPTIONS selected_voice = DARTHVADER;
 
 	float scrollfactor = 2;
 
@@ -1068,11 +1102,44 @@ public:
 	void GoToMainMenu() {
 		if (scroll_menu_mode != MAIN_MENU) {
 			scroll_menu_mode = MAIN_MENU;
-			PlayMenuSound("voiceovers/darthvader/menu/mainmenu.wav");
+			GetVoiceoverFontPath("/menu/", "mainmenu.wav");
+			PlayMenuSound(fontpath_);
 		} else {
 			ToggleScrollMenuChangeMode();
 		}
 
+	}
+
+	void next_menu_voice() {
+		switch (selected_voice) {
+			STDOUT.println(selected_voice);
+			case DARTHVADER:
+				selected_voice = YODA;
+				current_voice_path = "yoda";
+				PlayMenuSound("/voiceovers/yoda/self.wav");
+				break;
+			case YODA:
+				selected_voice = DARTHVADER;
+				current_voice_path = "darthvader";
+				PlayMenuSound("/voiceovers/darthvader/self.wav");
+				break;
+		}
+	}
+
+	void previous_menu_voice() {
+		switch (selected_voice) {
+			STDOUT.println(selected_voice);
+		case DARTHVADER:
+			selected_voice = YODA;
+			current_voice_path = "yoda";
+			PlayMenuSound("/voiceovers/yoda/self.wav");
+			break;
+		case YODA:
+			selected_voice = DARTHVADER;
+			current_voice_path = "darthvader";
+			PlayMenuSound("/voiceovers/darthvader/self.wav");
+			break;
+		}
 	}
 
 	int maxVolume, volumeIncrement, minVolume, highVolume, mediumVolume, lowVolume;
@@ -1096,7 +1163,10 @@ public:
 			dynamic_mixer.set_volume(volume);
 			beeper.Beep(0.05, 2000.0);
 		}
-		check_volume();
+
+		if (!track_player_) {
+			check_volume();
+		}
 		STDOUT.println(volume);
 
 	}
@@ -1110,19 +1180,24 @@ public:
 		//Need to calculate this eventually.
 		if (volume == 1000)
 		{
-			PlayMenuSound("voiceovers/darthvader/menu/maxvolume.wav");
+
+			GetVoiceoverFontPath("/menu/", "maxvolume.wav");
+			PlayMenuSound(fontpath_);
 		}
 		else if (volume == 700)
 		{
-			PlayMenuSound("voiceovers/darthvader/menu/high.wav");
+			GetVoiceoverFontPath("/menu/", "high.wav");
+			PlayMenuSound(fontpath_);
 		}
 		else if (volume == 500)
 		{
-			PlayMenuSound("voiceovers/darthvader/menu/medium.wav");
+			GetVoiceoverFontPath("/menu/", "medium.wav");
+			PlayMenuSound(fontpath_);
 		}
 		else if (volume == 200)
 		{
-			PlayMenuSound("voiceovers/darthvader/menu/low.wav");
+			GetVoiceoverFontPath("/menu/", "low.wav");
+			PlayMenuSound(fontpath_);
 		}
 	}
 
@@ -1145,40 +1220,49 @@ public:
 		switch (hover_menu_mode) {
 		case MAIN_MENU:
 			hover_menu_mode = FONT_CHANGE;
-			PlayMenuSound("voiceovers/darthvader/menu/fontchange.wav");
+			GetVoiceoverFontPath("/menu/", "fontchange.wav");
+			PlayMenuSound(fontpath_);
 			break;
 		case FONT_CHANGE:
 			hover_menu_mode = SOUND_CHANGE;
-			PlayMenuSound("voiceovers/darthvader/menu/menuvoicechange.wav");
+			GetVoiceoverFontPath("/menu/", "menuvoicechange.wav");
+			PlayMenuSound(fontpath_);
 			break;
 		case SOUND_CHANGE:
 			hover_menu_mode = VOLUME_CHANGE;
-			PlayMenuSound("voiceovers/darthvader/menu/volumechange.wav");
+			GetVoiceoverFontPath("/menu/", "volumechange.wav");
+			PlayMenuSound(fontpath_);
 			break;
 		case VOLUME_CHANGE:
 			hover_menu_mode = FONT_CHANGE;
-			PlayMenuSound("voiceovers/darthvader/menu/fontchange.wav");
+			GetVoiceoverFontPath("/menu/", "fontchange.wav");
+			PlayMenuSound(fontpath_);
 			break;
 		}
 	}
+	char fontpath_[128];
 
 	void previous_menu() {
 		switch (hover_menu_mode) {
 		case MAIN_MENU:
 			hover_menu_mode = VOLUME_CHANGE;
-			PlayMenuSound("voiceovers/darthvader/menu/volumechange.wav");
+			GetVoiceoverFontPath("/menu/", "volumechange.wav");
+			PlayMenuSound(fontpath_);
 			break;
 		case FONT_CHANGE:
 			hover_menu_mode = VOLUME_CHANGE;
-			PlayMenuSound("voiceovers/darthvader/menu/volumechange.wav");
+			GetVoiceoverFontPath("/menu/", "volumechange.wav");
+			PlayMenuSound(fontpath_);
 			break;
 		case SOUND_CHANGE:
 			hover_menu_mode = FONT_CHANGE;
-			PlayMenuSound("voiceovers/darthvader/menu/fontchange.wav");
+			GetVoiceoverFontPath("/menu/", "fontchange.wav");
+			PlayMenuSound(fontpath_);
 			break;
 		case VOLUME_CHANGE:
 			hover_menu_mode = SOUND_CHANGE;
-			PlayMenuSound("voiceovers/darthvader/menu/menuvoicechange.wav");
+			GetVoiceoverFontPath("/menu/", "menuvoicechange.wav");
+			PlayMenuSound(fontpath_);
 			break;
 		}
 	}
@@ -1204,13 +1288,28 @@ public:
 		STDOUT.println("Audio disabled.");
 #endif
 	}
+	void GetVoiceoverFontPath(const char* fonttype, const char* fontname) {
+		
+		char fontpathtemp_[128];
+		strcpy(fontpathtemp_, "");
+
+		strcat(fontpathtemp_, "/voiceovers");
+		strcat(fontpathtemp_, "/");
+		strcat(fontpathtemp_, current_voice_path);
+		strcat(fontpathtemp_, fonttype);
+		strcat(fontpathtemp_, fontname);
+
+		strcpy(fontpath_, fontpathtemp_);
+	}
 
 	void ToggleScrollMenuChangeMode() {
 		scroll_menu_mode = MAIN_MENU;
 		hover_menu_mode = MAIN_MENU;
 
 		if (!scroll_menu_enabled) {
-			PlayMenuSound("voiceovers/darthvader/menu/mainmenu.wav");
+
+			GetVoiceoverFontPath("/menu/", "mainmenu.wav");
+			PlayMenuSound(fontpath_);
 			start_tick_angle_ = fusor.angle2();
 			current_tick_angle_ = fusor.angle2();
 			STDOUT << "Entering scroll menu change.\n";
@@ -1224,27 +1323,11 @@ public:
 	}
 
 #endif // DISABLE_SCROLL_MENU  
+
 #ifdef NEW_FONT_OVERRIDE
 	void OverrideNewFont() {
-#ifdef ENABLE_AUDIO
-		if (track_player_) {
-			track_player_->Stop();
-			track_player_.Free();
-		}
-		else {
-			MountSDCard();
-			EnableAmplifier();
-			track_player_ = GetFreeWavPlayer();
-			if (track_player_) {
-				track_player_->Play(current_preset_.track.get());
-			}
-			else {
-				STDOUT.println("No available WAV players.");
-			}
-		}
-#else
-		STDOUT.println("Audio disabled.");
-#endif
+		GetVoiceoverFontPath("/characters/", current_preset_.track.get());
+		PlayMenuSound(fontpath_);
 	}
 #endif
 
