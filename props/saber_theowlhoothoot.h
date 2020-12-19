@@ -3,15 +3,15 @@
 
 #include "prop_base.h"
 
-#define PROP_TYPE Saber
+#define PROP_TYPE TheOwlHootHootSaber
 
 // The Saber class implements the basic states and actions
 // for the saber.
 
-class Saber : public PropBase {
+class TheOwlHootHootSaber : public PropBase {
 public:
-	Saber() : PropBase() {}
-  const char* name() override { return "Saber"; }
+	TheOwlHootHootSaber() : PropBase() {}
+  const char* name() override { return "TheOwlHootHootSaber"; }
 
   bool Event2(enum BUTTON button, EVENT event, uint32_t modifiers) override {
 #ifdef DUAL_POWER_BUTTONS
