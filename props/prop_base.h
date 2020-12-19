@@ -330,9 +330,6 @@ public:
 		SaveState(current_preset_.preset_num + 1);
 #endif
 		SetPreset(current_preset_.preset_num + 1, true);
-#ifdef NEW_FONT_OVERRIDE
-		OverrideNewFont();
-#endif
 
 	}
 
@@ -343,9 +340,6 @@ public:
 #endif
 		SetPreset(current_preset_.preset_num - 1, true);
 
-#ifdef NEW_FONT_OVERRIDE
-		OverrideNewFont();
-#endif
 	}
 
 	// Rotates presets backwards and saves.
@@ -897,16 +891,30 @@ public:
 
 #endif
 
-#ifdef ENABLE_SCROLL_MENU
+
+
+#ifdef IDLE_OFF_TIME
+		if (SaberBase::IsOn() ||
+			(current_style() && current_style()->Charging())) {
+			last_on_time_ = millis();
+		}
+		if (millis() - last_on_time_ > IDLE_OFF_TIME) {
+			SaberBase::DoOff(OFF_IDLE);
+			last_on_time_ = millis();
+		}
+#endif
+
+		PollSaveColorChange();
+
+#ifdef ENABLE_SCROLL_MENU //START OF SCROLL MENU LOOP FUNCTION FOR SWITCH CASE. THIS TRIGGERST HE BASE FUNCTIONS DELCARED OUTSIDE FOR MENU FUCNTIONS.
 
 #define TICK_ANGLE_2 (M_PI * 2 / 12)
+
 		switch (scroll_menu_enabled) {
 		case true: {
 			SaberBase::RequestMotion();
-			//last_on_time_ = millis();
-			uint32_t t = millis();	
+			uint32_t t = millis();
 			activated_ = millis();
-			//I2CUnlock();
 			switch (scroll_menu_mode) {
 			case FONT_CHANGE:
 			{
@@ -920,6 +928,10 @@ public:
 					if (!track_player_) {
 						previous_preset();
 					}
+					else {
+						start_tick_angle_ = fusor.angle2();
+						current_tick_angle_ = fusor.angle2();
+					}
 				}
 				if (a < -TICK_ANGLE_2 * scrollfactor) {
 					current_tick_angle_ -= TICK_ANGLE_2;
@@ -927,6 +939,10 @@ public:
 					STDOUT << "TICK-\n";
 					if (!track_player_) {
 						next_preset();
+					}
+					else {
+						start_tick_angle_ = fusor.angle2();
+						current_tick_angle_ = fusor.angle2();
 					}
 				}
 				break;
@@ -943,6 +959,10 @@ public:
 					if (!track_player_) {
 						previous_menu_voice();
 					}
+					else {
+						start_tick_angle_ = fusor.angle2();
+						current_tick_angle_ = fusor.angle2();
+					}
 				}
 				if (a < -TICK_ANGLE_2 * scrollfactor) {
 					current_tick_angle_ -= TICK_ANGLE_2;
@@ -950,6 +970,10 @@ public:
 					STDOUT << "TICK-\n";
 					if (!track_player_) {
 						next_menu_voice();
+					}
+					else {
+						start_tick_angle_ = fusor.angle2();
+						current_tick_angle_ = fusor.angle2();
 					}
 				}
 				break;
@@ -963,10 +987,15 @@ public:
 					current_tick_angle_ += TICK_ANGLE_2;
 					if (current_tick_angle_ > M_PI) current_tick_angle_ -= M_PI * 2;
 					STDOUT << "TICK+\n";
+					//If a track is playing wait for it to finish.
 					if (!track_player_) {
 						previous_menu();
 					}
-					//previous_menu();
+					//If a track is playing, reset the angles so we dont fuck things up.
+					else {
+						start_tick_angle_ = fusor.angle2();
+						current_tick_angle_ = fusor.angle2();
+					}
 				}
 				if (a < -TICK_ANGLE_2 * scrollfactor) {
 					current_tick_angle_ -= TICK_ANGLE_2;
@@ -974,6 +1003,11 @@ public:
 					STDOUT << "TICK-\n";
 					if (!track_player_) {
 						next_menu();
+					}
+					//If a track is playing, reset the angles so we dont fuck things up.
+					else {
+						start_tick_angle_ = fusor.angle2();
+						current_tick_angle_ = fusor.angle2();
 					}
 				}
 				break;
@@ -997,26 +1031,18 @@ public:
 				}
 				break;
 			}
+			case BATTERY_CHECK:
+			{
+				check_battery();
+			}
 
 			}
 		}
 		}
-#endif
+#endif // ENABLE_SCROLL_MENU
 
-#ifdef IDLE_OFF_TIME
-		if (SaberBase::IsOn() ||
-			(current_style() && current_style()->Charging())) {
-			last_on_time_ = millis();
-		}
-		if (millis() - last_on_time_ > IDLE_OFF_TIME) {
-			SaberBase::DoOff(OFF_IDLE);
-			last_on_time_ = millis();
-		}
-#endif
-
-		PollSaveColorChange();
 	}
-
+	
 #ifdef IDLE_OFF_TIME
 	uint32_t last_on_time_;
 #endif
@@ -1054,22 +1080,21 @@ public:
 	}
 #endif // DISABLE_COLOR_CHANGE  
 
+
+#ifdef ENABLE_SCROLL_MENU //START OF THEOWLHOOTHOOT CHANGES FOR SCROLLMENU SETUP
+	uint32_t last_beep_;
 	float start_tick_angle_ = 0.0;
 	bool scroll_menu_enabled = false;
-
-
-
-#ifdef ENABLE_SCROLL_MENU
-	uint32_t last_beep_;
 	float current_tick_angle_ = 0.0;
-	char* current_voice_path = "yoda";
 
 	enum MENU_OPTIONS {
 		MAIN_MENU,
 		FONT_CHANGE,
 		SOUND_CHANGE,
 		VOLUME_CHANGE,
-		COLOR_CHANGE
+		BATTERY_CHECK,
+		COLOR_CHANGE,
+		CONFIG_CHANGE
 	};
 
 	MENU_OPTIONS scroll_menu_mode = MAIN_MENU;
@@ -1077,17 +1102,22 @@ public:
 
 	enum VOICE_OPTIONS {
 		DARTHVADER,
-		YODA 
+		YODA,
+		COUNTDOOKU,
+		OWK
 	};
 
-	VOICE_OPTIONS selected_voice = DARTHVADER;
+	VOICE_OPTIONS selected_voice = COUNTDOOKU;
+	char* current_voice_path = "countdooku";
 
 	float scrollfactor = 2;
 
+	//Check for scroll menu for prop config.
 	bool IsScrollMenuEnabled() {
 		return scroll_menu_enabled;
 	}
 
+	//Handles the menu click for that case.
 	void SelectMenuOption() {
 		beeper.Beep(0.05, 2000.0);
 		if (scroll_menu_mode == MAIN_MENU)
@@ -1099,34 +1129,48 @@ public:
 		}
 	}
 
+	//Trigger to handle going to the main menu with a long press at any stage.
 	void GoToMainMenu() {
 		if (scroll_menu_mode != MAIN_MENU) {
 			scroll_menu_mode = MAIN_MENU;
 			GetVoiceoverFontPath("/menu/", "mainmenu.wav");
 			PlayMenuSound(fontpath_);
-		} else {
+		}
+		else {
 			ToggleScrollMenuChangeMode();
 		}
 
 	}
 
-	void next_menu_voice() {
-		switch (selected_voice) {
-			STDOUT.println(selected_voice);
-			case DARTHVADER:
-				selected_voice = YODA;
-				current_voice_path = "yoda";
-				PlayMenuSound("/voiceovers/yoda/self.wav");
-				break;
-			case YODA:
-				selected_voice = DARTHVADER;
-				current_voice_path = "darthvader";
-				PlayMenuSound("/voiceovers/darthvader/self.wav");
-				break;
+	//Checks battery and returns medium high or low.
+	void check_battery() {
+		float batteryPercent = battery_monitor.battery_percent();
+
+		STDOUT.println(batteryPercent);
+
+		if (batteryPercent > 67) {
+			STDOUT.println("High Battery");
+			GetVoiceoverFontPath("/menu/", "highbattery.wav");
+			PlayMenuSound(fontpath_);
 		}
+		else if (67 > batteryPercent && batteryPercent > 40) {
+			STDOUT.println("Medium Battery");
+			GetVoiceoverFontPath("/menu/", "mediumbattery.wav");
+			PlayMenuSound(fontpath_);
+		}
+		else if (34 > batteryPercent && batteryPercent > 0) {
+			STDOUT.println("Low Battery");
+			GetVoiceoverFontPath("/menu/", "lowbattery.wav");
+			PlayMenuSound(fontpath_);
+		}
+
+		//Exit menu after checking the battery and reporting.
+		ToggleScrollMenuChangeMode();
 	}
 
-	void previous_menu_voice() {
+	//Cycle to the next menu voice. This needs a major upgrade to read the folder name and check the self.wav for annoucements. Needs a
+	//smarted enum that doesn't suck with a switch case.
+	void next_menu_voice() {
 		switch (selected_voice) {
 			STDOUT.println(selected_voice);
 		case DARTHVADER:
@@ -1135,6 +1179,16 @@ public:
 			PlayMenuSound("/voiceovers/yoda/self.wav");
 			break;
 		case YODA:
+			selected_voice = COUNTDOOKU;
+			current_voice_path = "countdooku";
+			PlayMenuSound("/voiceovers/countdooku/self.wav");
+			break;
+		case COUNTDOOKU:
+			selected_voice = OWK;
+			current_voice_path = "obiwan";
+			PlayMenuSound("/voiceovers/obiwan/self.wav");
+			break;
+		case OWK:
 			selected_voice = DARTHVADER;
 			current_voice_path = "darthvader";
 			PlayMenuSound("/voiceovers/darthvader/self.wav");
@@ -1142,78 +1196,96 @@ public:
 		}
 	}
 
-	int maxVolume, volumeIncrement, minVolume, highVolume, mediumVolume, lowVolume;
-	bool setVolumes;
-	//VolumeMenu functions
-	void setUpVolume() {
-		int maxVolume = 1200;
-
-		int volumeIncrement = 50;
-		int minVolume = volumeIncrement;
-		int highVolume = (maxVolume - volumeIncrement / 5) * 3;
-		int mediumVolume = (maxVolume - volumeIncrement / 5) * 2;
-		int lowVolume = (maxVolume - volumeIncrement / 5) * 1;
-
+	//Cycle to the next menu voice. This needs a major upgrade to read the folder name and check the self.wav for annoucements. Needs a
+	//smarted enum that doesn't suck with a switch case.
+	void previous_menu_voice() {
+		switch (selected_voice) {
+			STDOUT.println(selected_voice);
+		case DARTHVADER:
+			selected_voice = OWK;
+			current_voice_path = "obiwan";
+			PlayMenuSound("/voiceovers/obiwan/self.wav");
+			break;
+		case YODA:
+			selected_voice = DARTHVADER;
+			current_voice_path = "darthvader";
+			PlayMenuSound("/voiceovers/darthvader/self.wav");
+			break;
+		case COUNTDOOKU:
+			selected_voice = YODA;
+			current_voice_path = "yoda";
+			PlayMenuSound("/voiceovers/yoda/self.wav");
+			break;
+		case OWK:
+			selected_voice = COUNTDOOKU;
+			current_voice_path = "countdooku";
+			PlayMenuSound("/voiceovers/countdooku/self.wav");
+			break;
+		}
 	}
 
+	//Start of volume control menu
+	float maxVolume = VOLUME;
+	float volumeIncrement = VOLUME * .05;
+	float highVolume = VOLUME * .80;
+	float mediumVolume = VOLUME * .50;
+	float lowVolume = VOLUME * .30;
+
+	bool setVolumes;
+
 	void increase_volume() {
-		int volume = (dynamic_mixer.get_volume());
-		if (volume >= 0 && volume < 1000) {
-			volume += 50;
-			dynamic_mixer.set_volume(volume);
+		float newVolume = (dynamic_mixer.get_volume());
+		if (newVolume < VOLUME) {
+			newVolume += volumeIncrement;
+			dynamic_mixer.set_volume(newVolume);
 			beeper.Beep(0.05, 2000.0);
 		}
-
 		if (!track_player_) {
 			check_volume();
 		}
-		STDOUT.println(volume);
+		STDOUT.println(newVolume);
+	}
+
+	void decrease_volume() {
+		float newVolume = (dynamic_mixer.get_volume());
+		if (newVolume > lowVolume) {
+			newVolume -= volumeIncrement;
+			dynamic_mixer.set_volume(newVolume);
+			beeper.Beep(0.05, 2000.0);
+		}
+		if (!track_player_) {
+			check_volume();
+		}
+		STDOUT.println(newVolume);
 
 	}
 	//Checks the volume on volume change and annoucnes milestone steps.
 	void check_volume() {
-
-		//setUpVolume();
-
-		int volume = (dynamic_mixer.get_volume());
-
-		//Need to calculate this eventually.
-		if (volume == 1000)
+		float volumeCheck = (dynamic_mixer.get_volume());
+		//Need to calculate this eventually. // DONE
+		if (volumeCheck == VOLUME)
 		{
-
 			GetVoiceoverFontPath("/menu/", "maxvolume.wav");
 			PlayMenuSound(fontpath_);
 		}
-		else if (volume == 700)
+		else if (volumeCheck == highVolume)
 		{
 			GetVoiceoverFontPath("/menu/", "high.wav");
 			PlayMenuSound(fontpath_);
 		}
-		else if (volume == 500)
+		else if (volumeCheck == mediumVolume)
 		{
 			GetVoiceoverFontPath("/menu/", "medium.wav");
 			PlayMenuSound(fontpath_);
 		}
-		else if (volume == 200)
+		else if (volumeCheck == lowVolume)
 		{
 			GetVoiceoverFontPath("/menu/", "low.wav");
 			PlayMenuSound(fontpath_);
 		}
 	}
 
-	void decrease_volume() {
-		int volume = (dynamic_mixer.get_volume());
-		if (volume > 300 && volume <= 1000) {
-			volume -= 50;
-			dynamic_mixer.set_volume(volume);
-			beeper.Beep(0.05, 2000.0);
-		}
-		check_volume();
-		STDOUT.println(volume);
-
-	}
 	//End of voume menu functions.
-
 
 	void next_menu() {
 		STDOUT.println(hover_menu_mode);
@@ -1234,24 +1306,31 @@ public:
 			PlayMenuSound(fontpath_);
 			break;
 		case VOLUME_CHANGE:
+			hover_menu_mode = BATTERY_CHECK;
+			GetVoiceoverFontPath("/menu/", "battery.wav");
+			PlayMenuSound(fontpath_);
+			break;
+		case BATTERY_CHECK:
 			hover_menu_mode = FONT_CHANGE;
 			GetVoiceoverFontPath("/menu/", "fontchange.wav");
 			PlayMenuSound(fontpath_);
 			break;
+
 		}
 	}
+
 	char fontpath_[128];
 
 	void previous_menu() {
 		switch (hover_menu_mode) {
 		case MAIN_MENU:
-			hover_menu_mode = VOLUME_CHANGE;
-			GetVoiceoverFontPath("/menu/", "volumechange.wav");
+			hover_menu_mode = BATTERY_CHECK;
+			GetVoiceoverFontPath("/menu/", "battery.wav");
 			PlayMenuSound(fontpath_);
 			break;
 		case FONT_CHANGE:
-			hover_menu_mode = VOLUME_CHANGE;
-			GetVoiceoverFontPath("/menu/", "volumechange.wav");
+			hover_menu_mode = BATTERY_CHECK;
+			GetVoiceoverFontPath("/menu/", "battery.wav");
 			PlayMenuSound(fontpath_);
 			break;
 		case SOUND_CHANGE:
@@ -1262,6 +1341,11 @@ public:
 		case VOLUME_CHANGE:
 			hover_menu_mode = SOUND_CHANGE;
 			GetVoiceoverFontPath("/menu/", "menuvoicechange.wav");
+			PlayMenuSound(fontpath_);
+			break;
+		case BATTERY_CHECK:
+			hover_menu_mode = VOLUME_CHANGE;
+			GetVoiceoverFontPath("/menu/", "volumechange.wav");
 			PlayMenuSound(fontpath_);
 			break;
 		}
@@ -1289,7 +1373,7 @@ public:
 #endif
 	}
 	void GetVoiceoverFontPath(const char* fonttype, const char* fontname) {
-		
+
 		char fontpathtemp_[128];
 		strcpy(fontpathtemp_, "");
 
@@ -1315,21 +1399,22 @@ public:
 			STDOUT << "Entering scroll menu change.\n";
 			scroll_menu_enabled = !scroll_menu_enabled;
 
-		}else {
+		}
+		else {
 			beeper.Beep(0.05, 2000.0);
 			scroll_menu_enabled = !scroll_menu_enabled;
 		}
 
 	}
 
-#endif // DISABLE_SCROLL_MENU  
+#endif // ENABLE_SCROLL_MENU  
 
 #ifdef NEW_FONT_OVERRIDE
 	void OverrideNewFont() {
 		GetVoiceoverFontPath("/characters/", current_preset_.track.get());
 		PlayMenuSound(fontpath_);
 	}
-#endif
+#endif // NEW_FONT_OVERRIDE  
 
 	void PrintButton(uint32_t b) {
 		if (b & BUTTON_POWER) STDOUT.print("Power");

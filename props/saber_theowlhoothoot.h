@@ -3,21 +3,14 @@
 
 #include "prop_base.h"
 
-#ifndef MOTION_TIMEOUT
-#define MOTION_TIMEOUT 60 * 15 * 1000
-#endif
-
-#ifdef ENABLE_SCROLL_MENU
-#define MOTION_TIMEOUT 60 * 15 * 1000
-#endif
-
 #define PROP_TYPE Saber
 
 // The Saber class implements the basic states and actions
 // for the saber.
+
 class Saber : public PropBase {
 public:
-  Saber() : PropBase() {}
+	Saber() : PropBase() {}
   const char* name() override { return "Saber"; }
 
   bool Event2(enum BUTTON button, EVENT event, uint32_t modifiers) override {
@@ -74,6 +67,8 @@ public:
       case EVENTID(BUTTON_AUX, EVENT_CLICK_SHORT, MODE_OFF):
 #ifdef DUAL_POWER_BUTTONS
         aux_on_ = true;
+
+
 		if (IsScrollMenuEnabled()) {
 			SelectMenuOption();
 		}

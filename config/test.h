@@ -15,13 +15,15 @@ const unsigned int maxLedsPerStrip = 64;
 
 #ifdef CONFIG_PRESETS
 Preset presets[] = {
-   { "SmthJedi", "lukeskywalker.wav",
+   { "DOOKU_PROFFIE", "countdooku.wav",
+    StylePtr<InOutSparkTip<EASYBLADE(RED, WHITE), 300, 800> >(), "red"},   
+	{ "GRAFLEX_VII", "lukeskywalker.wav",
     StylePtr<InOutSparkTip<EASYBLADE(BLUE, WHITE), 300, 800> >(), "blue"},
 	{ "TheReturn", "darthvader.wav",
 	StylePtr<InOutSparkTip<EASYBLADE(RED, WHITE), 300, 800> >(), "red"},
    { "TeensySF", "macewindu.wav",
 	StylePtr<InOutSparkTip<EASYBLADE(MAGENTA, WHITE), 300, 800> >(), "purple"},
-   { "RgueCmdr", "owk.wav",
+   { "SmthJedi", "owk.wav",
     StyleFirePtr<BLUE, CYAN>(), "blue fire"},
    { "TthCrstl", "yoda.wav",
     StylePtr<InOutHelper<EASYBLADE(OnSpark<GREEN>, WHITE), 300, 800> >(), "green"},
