@@ -330,7 +330,10 @@ public:
 		SaveState(current_preset_.preset_num + 1);
 #endif
 		SetPreset(current_preset_.preset_num + 1, true);
-
+#ifdef NEW_FONT_OVERRIDE
+		OverrideNewFont();
+#endif
+		
 	}
 
 	// Go to the previous Preset.
@@ -339,7 +342,9 @@ public:
 		SaveState(current_preset_.preset_num - 1);
 #endif
 		SetPreset(current_preset_.preset_num - 1, true);
-
+#ifdef NEW_FONT_OVERRIDE
+		OverrideNewFont();
+#endif
 	}
 
 	// Rotates presets backwards and saves.
